@@ -12,9 +12,9 @@ import spock.lang.Shared
 import spock.lang.Specification
 
 @DataRedisTest
-class GenericFeatureUnitTest extends Specification {
+class RedisTemplateUnitTest extends Specification {
 
-   private static Logger logger = LoggerFactory.getLogger(GenericFeatureUnitTest.class)
+    private static Logger log = LoggerFactory.getLogger(RedisTemplateUnitTest.class)
 
     @Shared
     RedisTemplate<String, Object> redisTemplate
@@ -24,7 +24,6 @@ class GenericFeatureUnitTest extends Specification {
 
     @Shared
     private JedisConnectionFactory connectionFactory
-
 
 
     def setup() {
@@ -43,32 +42,31 @@ class GenericFeatureUnitTest extends Specification {
     }
 
     def "Test Hash type CRUD operations"() {
-            given:
-            HashOperations<String, String, Long> redisOperation = redisTemplate.opsForHash()
-            def redisHashKey = "TestHashKey_1"
-            def hashData = [imkey: 1]
 
-            when: "insert"
-            redisOperation.putAll(redisHashKey,hashData)
+        given:
+        HashOperations<String, String, Long> redisOperation = redisTemplate.opsForHash()
+        def redisHashKey = "TestHashKey_1"
+        def hashData = [imkey: 1]
 
-            then:
-            redisOperation.get(redisHashKey, "imkey") == 1
+        when:
+        redisOperation.putAll(redisHashKey, hashData)
 
-            when: "insert new key"
-            redisOperation.put(redisHashKey, "imalsokey", 2)
+        then:
+        redisOperation.get(redisHashKey, "imkey") == 1
 
-            and: " and delete recently added value  "
-            redisOperation.delete(redisHashKey, "imalsokey")
+        when: "insert new key and delete recently added value"
+        redisOperation.put(redisHashKey, "imalsokey", 2)
+        redisOperation.delete(redisHashKey, "imalsokey")
 
-            then: "imalsokey should be deleted"
-            redisOperation.get(redisHashKey,"imalsokey") == null
-            redisOperation.entries(redisHashKey).size() == 1
+        then: "imalsokey should be deleted"
+        redisOperation.get(redisHashKey, "imalsokey") == null
+        redisOperation.entries(redisHashKey).size() == 1
 
-            when: "update first insert key"
-            redisOperation.put(redisHashKey, "imkey", 11)
+        when: "update first insert key"
+        redisOperation.put(redisHashKey, "imkey", 11)
 
-            then: "it should be update existing value"
-            redisOperation.get(redisHashKey,"imkey") == 11
+        then: "it should be update existing value"
+        redisOperation.get(redisHashKey, "imkey") == 11
     }
 
     def "Test SortedSet type CRUD operations"() {
@@ -87,11 +85,9 @@ class GenericFeatureUnitTest extends Specification {
         redisOperation.add("imkey7", 7)
 
         then: "ordered by score"
-        redisOperation.rank("imkey4")  == 3
-        redisOperation.rank("imkey2")  == 1
-
-        and : "ordered by insertion"
-        redisOperation.range(1, 7).toArray()[2] == "imkey4"
+        redisOperation.rank("imkey4") == 3
+        redisOperation.rank("imkey2") == 1
+        redisOperation.range(0, redisOperation.zCard() - 1).toArray()[2] == "imkey3"
 
         when: "select score place between 1 and 5"
         def sortedByScore = redisOperation.rangeByScore(1, 5)
@@ -100,7 +96,7 @@ class GenericFeatureUnitTest extends Specification {
         sortedByScore.toArray()[1] == "imkey2"
         sortedByScore.size() == 5
 
-        when:  "update imkey2's score as 10"
+        when: "update imkey2's score as 10"
         redisOperation.add("imkey2", 10)
 
         then: "imkey2's should be place at end "
@@ -112,6 +108,14 @@ class GenericFeatureUnitTest extends Specification {
         then:
         sortedByScore2.last() == "imkey2"
 
+        when:
+        def hi = redisOperation.rangeByScore(0, 1)
+        def hi2 = redisOperation.reverseRangeByScore(10, 1)
+
+        then:
+        log.debug(hi.toString())
+        log.debug(hi2.toString())
+
     }
 
     def "Test when sorted set containing same score values"() {
@@ -120,14 +124,15 @@ class GenericFeatureUnitTest extends Specification {
         def redisOperation = redisTemplate.boundZSetOps(redisSortedSetKey)
 
         when: "values should be guaranteed unique, but score can duplicated"
-        redisOperation.add("a",1)
-        redisOperation.add("ab",1)
-        redisOperation.add("abc",1)
-        redisOperation.add("abcd",1)
-        redisOperation.add("abcde",1)
+        redisOperation.add("a", 1)
+        redisOperation.add("ab", 1)
+        redisOperation.add("abc", 1)
+        redisOperation.add("abcd", 1)
+        redisOperation.add("abcde", 1)
 
         then: "when value's score duplicated, it ordered by insertion order"
         redisOperation.rank("abc") == 2
 
     }
+
 }
