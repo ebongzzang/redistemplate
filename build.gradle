@@ -38,7 +38,8 @@ dependencies {
 	compile 'redis.clients:jedis:2.9.0'
 	compile 'it.ozimov:embedded-redis:0.7.2'
 
+    testCompile 'com.nagternal:spock-genesis:0.6.0'
     testCompileOnly 'com.athaydes:spock-reports:1.6.0'
 	testCompile('org.springframework.boot:spring-boot-starter-test')
-	testCompile('org.spockframework:spock-core:1.1-groovy-2.4')
+	testCompile('org.spockframework:spock-spring:1.1-groovy-2.4')
 }

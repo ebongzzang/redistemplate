@@ -2,13 +2,11 @@ package org.ebong2.featuretest.redistemplate
 
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.data.redis.DataRedisTest
-import org.springframework.data.redis.connection.jedis.JedisConnectionFactory
 import org.springframework.data.redis.core.HashOperations
 import org.springframework.data.redis.core.RedisTemplate
-import redis.clients.jedis.JedisShardInfo
 import redis.embedded.RedisServer
-import spock.lang.Shared
 import spock.lang.Specification
 
 @DataRedisTest
@@ -16,25 +14,13 @@ class RedisTemplateUnitTest extends Specification {
 
     private static Logger log = LoggerFactory.getLogger(RedisTemplateUnitTest.class)
 
-    @Shared
-    RedisTemplate<String, Object> redisTemplate
-
-    @Shared
+    @Autowired
+    RedisTemplate<Object, Object> redisTemplate
+    
     RedisServer redisServer = new RedisServer()
-
-    @Shared
-    private JedisConnectionFactory connectionFactory
-
 
     def setup() {
         redisServer.start()
-        JedisShardInfo shardInfo = new JedisShardInfo("localhost", 6379)
-        connectionFactory = new JedisConnectionFactory()
-        connectionFactory.setShardInfo(shardInfo)
-
-        redisTemplate = new RedisTemplate<>()
-        redisTemplate.setConnectionFactory(connectionFactory)
-        redisTemplate.afterPropertiesSet()
     }
 
     def cleanup() {
